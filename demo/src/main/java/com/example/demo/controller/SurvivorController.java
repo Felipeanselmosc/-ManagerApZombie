@@ -17,9 +17,4 @@ public class SurvivorController {
         List<Survivor> survivors = new ArrayList<>();
         return survivors;
     }
-
-    @GetMapping("/ping")
-    public String ping() {
-        return "Survivor controller activated!";
-    }
 }

@@ -16,9 +16,4 @@ public class ThreatController {
         List<String> threats = new ArrayList<>();
         return threats;
     }
-
-    @GetMapping("/ping")
-    public String ping() {
-        return "Threat controller activated!";
-    }
 }

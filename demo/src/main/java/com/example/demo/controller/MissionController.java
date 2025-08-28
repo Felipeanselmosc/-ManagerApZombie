@@ -17,9 +17,4 @@ public class MissionController {
         List<Mission> missions = new ArrayList<>();
         return missions;
     }
-
-    @GetMapping("/ping")
-    public String ping() {
-        return "Mission controller activated!";
-    }
 }
