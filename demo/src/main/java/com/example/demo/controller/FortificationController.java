@@ -1,71 +1,64 @@
 package com.example.demo.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import com.example.demo.model.Feature;
 import com.example.demo.model.Fortification;
-
+import com.example.demo.repository.FortificationRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
 
 @RestController
 @RequestMapping("/fortifications")
 @Slf4j
 public class FortificationController {
-    private List<Fortification> repository = new ArrayList<>();
+
+    private final FortificationRepository repository;
+
+    public FortificationController(FortificationRepository repository) {
+        this.repository = repository;
+    }
 
     @PostMapping
     public ResponseEntity<Fortification> create(@RequestBody Fortification fortification) {
-        log.info("criando fortification: " + fortification.getType());
-        repository.add(fortification);
-        return ResponseEntity.status(HttpStatus.CREATED).body(fortification);
+        log.info("criando fortification: {}", fortification.getType());
+        return ResponseEntity.status(HttpStatus.CREATED).body(repository.save(fortification));
     }
 
     @GetMapping
     public List<Fortification> index() {
         log.info("listando todas as fortifications");
-        return repository;
+        return repository.findAll();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Fortification> get(@PathVariable Long id) {
-        log.info("buscando fortification com id " + id);
-        var fortificationFound = getFortificationById(id);
-        if (fortificationFound.isEmpty()) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(fortificationFound.get());
+        log.info("buscando fortification com id {}", id);
+        return repository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Fortification> update(@PathVariable Long id, @RequestBody Fortification fortificationUpdate) {
-        log.info("atualizando fortification com id {} ", id);
-        var fortificationFound = getFortificationById(id);
-        if (fortificationFound.isEmpty()) return ResponseEntity.notFound().build();
-        
-        repository.remove(fortificationFound.get());
-        fortificationUpdate.setId(id);
-        repository.add(fortificationUpdate);
-        return ResponseEntity.ok(fortificationUpdate);
+        log.info("atualizando fortification com id {}", id);
+        return repository.findById(id)
+                .map(existing -> {
+                    fortificationUpdate.setId(id);
+                    return ResponseEntity.ok(repository.save(fortificationUpdate));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        log.info("deletando fortification com id " + id);
-        var fortificationFound = getFortificationById(id);
-        if (fortificationFound.isEmpty()) return ResponseEntity.notFound().build();
-        
-        repository.removeIf(fortification -> fortification.getId().equals(id));
-        return ResponseEntity.noContent().build();
-    }
-
-     private Optional<Fortification> getFortificationById(Long id) {
-           var fortificationFound = repository.stream()
-            .filter(fortification -> fortification.getId().equals(id))
-            .findFirst();
-        return fortificationFound;
+        log.info("deletando fortification com id {}", id);
+        return repository.findById(id)
+                .map(existing -> {
+                    repository.delete(existing);
+                    return ResponseEntity.noContent().build();
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }
