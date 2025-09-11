@@ -2,63 +2,61 @@ package com.example.demo.controller;
 
 import com.example.demo.model.Mission;
 import com.example.demo.repository.MissionRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/missions")
+@RequestMapping("missions")
 @Slf4j
 public class MissionController {
 
-    private final MissionRepository repository;
-
-    public MissionController(MissionRepository repository) {
-        this.repository = repository;
-    }
+    @Autowired
+    private MissionRepository missionRepository;
 
     @GetMapping
     public List<Mission> index() {
-        return repository.findAll();
+        return missionRepository.findAll();
     }
 
     @PostMapping
-    @ResponseStatus(code = HttpStatus.CREATED)
-    public Mission create(@RequestBody Mission mission) {
-        log.info("created mission {}", mission);
-        return repository.save(mission);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mission create(@RequestBody @Valid Mission mission) {
+        log.info("criando mission " + mission);
+        return missionRepository.save(mission);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Mission> get(@PathVariable Long id) {
-        log.info("buscando mission com id {}", id);
-        return repository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("{id}")
+    public Mission get(@PathVariable Long id) {
+        log.info("buscando mission com id " + id);
+        return getMissionById(id);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Mission> update(@PathVariable Long id, @RequestBody Mission missionUpdate) {
-        log.info("atualizando mission com id {}", id);
-        return repository.findById(id)
-                .map(existing -> {
-                    missionUpdate.setId(id);
-                    return ResponseEntity.ok(repository.save(missionUpdate));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    @DeleteMapping("{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void destroy(@PathVariable Long id) {
+        log.info("apagando mission com id {}", id);
+        missionRepository.delete(getMissionById(id));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        log.info("deletando mission com id {}", id);
-        return repository.findById(id)
-                .map(existing -> {
-                    repository.delete(existing);
-                    return ResponseEntity.noContent().build();
-                })
-                .orElse(ResponseEntity.notFound().build());
+    @PutMapping("{id}")
+    public Mission update(@RequestBody @Valid Mission missionUpdated, @PathVariable Long id) {
+        log.info("atualizando mission {} com id {}", missionUpdated, id);
+        getMissionById(id);
+        missionUpdated.setId(id);
+        return missionRepository.save(missionUpdated);
+    }
+
+    private Mission getMissionById(Long id) {
+        return missionRepository
+                .findById(id)
+                .orElseThrow(
+                    () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission não encontrada com id " + id)
+                );
     }
 }

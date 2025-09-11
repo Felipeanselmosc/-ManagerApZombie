@@ -2,63 +2,61 @@ package com.example.demo.controller;
 
 import com.example.demo.model.Threat;
 import com.example.demo.repository.ThreatRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/threats")
+@RequestMapping("threats")
 @Slf4j
 public class ThreatController {
 
-    private final ThreatRepository repository;
-
-    public ThreatController(ThreatRepository repository) {
-        this.repository = repository;
-    }
+    @Autowired
+    private ThreatRepository threatRepository;
 
     @GetMapping
     public List<Threat> index() {
-        return repository.findAll();
+        return threatRepository.findAll();
     }
 
     @PostMapping
-    @ResponseStatus(code = HttpStatus.CREATED)
-    public Threat create(@RequestBody Threat threat) {
-        log.info("created threat {}", threat);
-        return repository.save(threat);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Threat create(@RequestBody @Valid Threat threat) {
+        log.info("criando threat " + threat);
+        return threatRepository.save(threat);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Threat> get(@PathVariable Long id) {
-        log.info("buscando threat com id {}", id);
-        return repository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("{id}")
+    public Threat get(@PathVariable Long id) {
+        log.info("buscando threat com id " + id);
+        return getThreatById(id);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Threat> update(@PathVariable Long id, @RequestBody Threat threatUpdate) {
-        log.info("atualizando threat com id {}", id);
-        return repository.findById(id)
-                .map(existing -> {
-                    threatUpdate.setId(id);
-                    return ResponseEntity.ok(repository.save(threatUpdate));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    @DeleteMapping("{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void destroy(@PathVariable Long id) {
+        log.info("apagando threat com id {}", id);
+        threatRepository.delete(getThreatById(id));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        log.info("deletando threat com id {}", id);
-        return repository.findById(id)
-                .map(existing -> {
-                    repository.delete(existing);
-                    return ResponseEntity.noContent().build();
-                })
-                .orElse(ResponseEntity.notFound().build());
+    @PutMapping("{id}")
+    public Threat update(@RequestBody @Valid Threat threatUpdated, @PathVariable Long id) {
+        log.info("atualizando threat {} com id {}", threatUpdated, id);
+        getThreatById(id);
+        threatUpdated.setId(id);
+        return threatRepository.save(threatUpdated);
+    }
+
+    private Threat getThreatById(Long id) {
+        return threatRepository
+                .findById(id)
+                .orElseThrow(
+                    () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Threat não encontrada com id " + id)
+                );
     }
 }

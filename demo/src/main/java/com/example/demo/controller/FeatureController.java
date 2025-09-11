@@ -2,63 +2,61 @@ package com.example.demo.controller;
 
 import com.example.demo.model.Feature;
 import com.example.demo.repository.FeatureRepository;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/features")
+@RequestMapping("features")
 @Slf4j
 public class FeatureController {
 
-    private final FeatureRepository repository;
-
-    public FeatureController(FeatureRepository repository) {
-        this.repository = repository;
-    }
+    @Autowired
+    private FeatureRepository featureRepository;
 
     @GetMapping
     public List<Feature> index() {
-        return repository.findAll();
+        return featureRepository.findAll();
     }
 
     @PostMapping
-    @ResponseStatus(code = HttpStatus.CREATED)
-    public Feature create(@RequestBody Feature feature) {
-        log.info("created feature {}", feature);
-        return repository.save(feature);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Feature create(@RequestBody @Valid Feature feature) {
+        log.info("criando feature " + feature);
+        return featureRepository.save(feature);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Feature> get(@PathVariable Long id) {
-        log.info("buscando feature com id {}", id);
-        return repository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("{id}")
+    public Feature get(@PathVariable Long id) {
+        log.info("buscando feature com id " + id);
+        return getFeatureById(id);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Feature> update(@PathVariable Long id, @RequestBody Feature featureUpdate) {
-        log.info("atualizando feature com id {}", id);
-        return repository.findById(id)
-                .map(existing -> {
-                    featureUpdate.setId(id);
-                    return ResponseEntity.ok(repository.save(featureUpdate));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    @DeleteMapping("{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void destroy(@PathVariable Long id) {
+        log.info("apagando feature com id {}", id);
+        featureRepository.delete(getFeatureById(id));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        log.info("deletando feature com id {}", id);
-        return repository.findById(id)
-                .map(existing -> {
-                    repository.delete(existing);
-                    return ResponseEntity.noContent().build();
-                })
-                .orElse(ResponseEntity.notFound().build());
+    @PutMapping("{id}")
+    public Feature update(@RequestBody @Valid Feature featureUpdated, @PathVariable Long id) {
+        log.info("atualizando feature {} com id {}", featureUpdated, id);
+        getFeatureById(id);
+        featureUpdated.setId(id);
+        return featureRepository.save(featureUpdated);
+    }
+
+    private Feature getFeatureById(Long id) {
+        return featureRepository
+                .findById(id)
+                .orElseThrow(
+                    () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Feature não encontrada com id " + id)
+                );
     }
 }

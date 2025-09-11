@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor  // JPA exige construtor vazio
+@NoArgsConstructor  
 @Entity
 public class Feature {
 
