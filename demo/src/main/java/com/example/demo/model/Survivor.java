@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor  // JPA exige construtor vazio
+@NoArgsConstructor  
 @Entity
 public class Survivor {
     @Id
@@ -18,5 +18,5 @@ public class Survivor {
     private Integer age;
     private String skills;
     private Integer health;
-    private Integer sanity; // Corrigido typo "saniti" para "sanity"
+    private Integer sanity; 
 }
