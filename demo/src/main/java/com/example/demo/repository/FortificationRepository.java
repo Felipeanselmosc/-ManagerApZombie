@@ -2,6 +2,7 @@ package com.example.demo.repository;
 
 import com.example.demo.model.Fortification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface FortificationRepository extends JpaRepository<Fortification, Long> {
+public interface FortificationRepository extends JpaRepository<Fortification, Long>, JpaSpecificationExecutor<Fortification> {
 }
